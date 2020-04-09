@@ -17,64 +17,43 @@ import seaborn as sns
 import io
 import urllib.robotparser
 
-# In[5]:
-
-
-HTML = "https://www.trovimap.com/precio-vivienda/barcelona"
-
-
-# In[6]:
-
-
-# Amb .read_html() podem obtenir fàcilment la taula que ens mostra la web.
-
-df = pd.read_html(HTML)
-df[0].head()
-
-
-# In[7]:
-
-
-# Amb BeautifulSoup, podrem obtenir tot el String del codi HTML per si volem obtenir més informació.
-
-historypage = urllib.request.urlopen(HTML)
-soup = bs.BeautifulSoup(historypage,'html.parser')
-makeitastring = ''.join(map(str, soup))
-
-#soup
-#makeitastring
 
 
 # In[8]:
 
+# Dondes una ciutat i un html retorna la taula comparativa que es troba a la web. Retorna una taula amb els valors següents:
+#Població
+#Valor de l'immoble segons: Menoss 60 m2 / Menos de 100.000€
+#Valor de l'immoble segons: Menos 60 m2 / Entre 100.000 € y 250.000 €
+#Valor de l'immoble segons: Menos 60 m2 / Más de 250.000€
+#Valor de l'immoble segons: Entre 60 m2 y 120 m2 / Menos de 100.000€
+#Valor de l'immoble segons: Entre 60 m2 y 120 m2 / Entre 100.000 € y 250.000 €
+#Valor de l'immoble segons: Entre 60 m2 y 120 m2 / Más de 250.000€
+#Valor de l'immoble segons: Más de 120 m2 / Menos de 100.000€
+#Valor de l'immoble segons: Más de 120 m2 / Entre 100.000 € y 250.000 €
+#Valor de l'immoble segons: Más de 120 m2 / Más de 250.000€
 
+def obtenirComparativa(ciutat,HTML):
+    historypage = urllib.request.urlopen(HTML)
+    soup = bs.BeautifulSoup(historypage,'html.parser')
+   # les dades es troben en un div amb la classe locality-stats__table hidden-xs
+   
+    divComparativa = soup.find('div', {'class':'locality-stats__table hidden-xs'})
 
-#retorna un llistat de ciutats i la seva variació de preu segons el html ja llegit per BeatifulSoup que li hem passat. Aquest html està format segons 
-# la provincia. Per exemple: HTML = "https://www.trovimap.com/precio-vivienda/barcelona" retornarà un llistat amb les
-# ciutats que es troben en aquesta pàgina que son les ciutats de Barcelona i les seves variacions de preus mensual, els últims 3 mesos
-# anual i preu euro/ metre quadrat.
+    tablaComp = []
+    capcalera = ["Poblacion","Menoss 60 m2 / Menos de 100.000€","Menos 60 m2 / Entre 100.000 € y 250.000 €","Menos 60 m2 / Más de 250.000€","Entre 60 m2 y 120 m2 / Menos de 100.000€","Entre 60 m2 y 120 m2 / Entre 100.000 € y 250.000 €","Entre 60 m2 y 120 m2 / Más de 250.000€","Más de 120 m2 / Menos de 100.000€","Más de 120 m2 / Entre 100.000 € y 250.000 €","Más de 120 m2 / Más de 250.000€"]
+    tablaComp.append (capcalera)
+    
+    #Recorrem els div i a la classe rate-value trobem el valor que busquem. Ho guardem tot a la taula tablaComp
+    
+    elements= []
+    elements.append(ciutat)
+    for rates in divComparativa.findAll ('div',{'class':'rate-value'}): 
+        elements.append(rates.find(text=True))
+   
+    tablaComp.append(elements)
 
-#def obtenirCiutatsiVariacio(htmlSoup):
-#    tableProv = soup.find('table', {'class':'table table-condensed precio-medio-table'})
-
-#    tbody = tableProv.find('tbody')
-
-#    llistaVarCiutats=[]
-#    for row in tbody.findAll("tr"):
-#        cells = row.findAll('td')    
-#        link = cells[0].find('a')
-#        ciutat = link.find(text=True)
-#        #print(ciutat)
-#        varMensual = cells[1].find(text=True)
-#        var3mesos = cells[2].find(text=True)
-#        varAnual = cells[3].find(text=True)
-#        eumetre = cells[4].find(text=True)
-#        element=[ciutat,varMensual,var3mesos,varAnual,eumetre]
-#        llistaVarCiutats.append(element)
-        
-        
- #   return llistaVarCiutats
-
+    return (tablaComp)
 
 
 
@@ -82,27 +61,6 @@ def generarCSV(taula,nomFitxer):
     
     taula.to_csv(nomFitxer + '.csv', header=True, index = False)
     
-#df_numeros.to_csv('numeros.csv', header=False, index=False)
-
-
-
-#HTML = "https://www.trovimap.com/precio-vivienda/barcelona"
-
-#VarCiutat = obtenirCiutatsiVariacio(soup)
-
-#print(VarCiutat[0])
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
 
 # In[9]:
@@ -121,7 +79,6 @@ user_agent= '*'
 # In[10]:
 
 pais = "espana"
-
 HTMLEspana = HTML + pais
 
 # Comprovem si està definit a reobots.txt que ens deixa fer web scrapping d'aquesta url
